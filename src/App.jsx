@@ -11,11 +11,11 @@ import {
   Table2, Menu, X, PanelLeftClose, PanelLeftOpen, Search, ArrowUpDown
 } from "lucide-react";
 
-const SIDEBAR_MIN = 72;
-const SIDEBAR_MAX = 300;
-const SIDEBAR_DEFAULT = 240;
-const SIDEBAR_COLLAPSED = 72;
-const SIDEBAR_STORAGE_KEY = "belize-tourism-sidebar";
+const SIDEBAR_MIN = 64;
+const SIDEBAR_MAX = 280;
+const SIDEBAR_DEFAULT = 200;
+const SIDEBAR_COLLAPSED = 64;
+const SIDEBAR_STORAGE_KEY = "belize-tourism-sidebar-v2";
 const MOBILE_BREAKPOINT = 980;
 
 const NAV_ITEMS = [
@@ -167,7 +167,7 @@ const AppSidebar = React.memo(function AppSidebar({ tab, onNavigate, mobileOpen,
         aria-label="Admin navigation"
       >
         <div className="sidebar-brand">
-          <div className="brand-icon"><Globe2 size={22} /></div>
+          <div className="brand-icon"><Globe2 size={18} /></div>
           <div className="sidebar-brand-text">
             <strong>Belize Tourism</strong>
             <span>Analytics</span>
@@ -179,8 +179,8 @@ const AppSidebar = React.memo(function AppSidebar({ tab, onNavigate, mobileOpen,
             aria-label="Toggle sidebar"
             title="Toggle sidebar"
           >
-            <PanelLeftClose size={18} className="icon-collapse" />
-            <PanelLeftOpen size={18} className="icon-expand" />
+            <PanelLeftClose size={16} className="icon-collapse" />
+            <PanelLeftOpen size={16} className="icon-expand" />
           </button>
         </div>
 
@@ -195,7 +195,7 @@ const AppSidebar = React.memo(function AppSidebar({ tab, onNavigate, mobileOpen,
               data-tooltip={label}
               aria-label={label}
             >
-              <Icon size={18} />
+              <Icon size={16} />
               <span className="nav-label">{label}</span>
             </button>
           ))}
@@ -344,7 +344,7 @@ function Select({ label, value, onChange, options }) {
 
 function Panel({ title, subtitle, children, filters, wide = false, tools, accentColor = "#2563eb" }) {
   return (
-    <section className={`panel ${wide ? "wide" : ""}`} style={{ borderTop: `4px solid ${accentColor}` }}>
+    <section className={`panel ${wide ? "wide" : ""}`} style={{ borderTop: `3px solid ${accentColor}` }}>
       <div className="panel-head">
         <div>
           <h3>{title}</h3>
@@ -381,7 +381,7 @@ function Kpi({ label, value, change, icon: Icon, themeIndex = 0 }) {
       <div className="kpi-top">
         <span>{label}</span>
         <div className="kpi-icon" style={{ background: theme.iconBg }}>
-          <Icon size={17} color="#fff" />
+          <Icon size={14} color="#fff" />
         </div>
       </div>
       <strong>{value}</strong>
@@ -403,7 +403,7 @@ function Donut({ data, centerLabel, centerValue }) {
             ))}
           </Pie>
           <Tooltip content={<Tip />} />
-          <Legend verticalAlign="bottom" height={36} />
+          <Legend verticalAlign="bottom" height={28} iconSize={8} wrapperStyle={{ fontSize: 11 }} />
         </PieChart>
       </ResponsiveContainer>
       {centerValue && (
@@ -419,12 +419,12 @@ function Donut({ data, centerLabel, centerValue }) {
 function BarRows({ data, dataKey = "value", nameKey = "name", unit = "", multiColor = true, singleColor = COLORS[0] }) {
   return (
     <ResponsiveContainer>
-      <BarChart data={data} layout="vertical" margin={{ top: 4, right: 38, bottom: 4, left: 8 }}>
+      <BarChart data={data} layout="vertical" margin={{ top: 2, right: 28, bottom: 2, left: 4 }}>
         <CartesianGrid strokeDasharray="2 4" horizontal={false} stroke="#e2e8f0" />
-        <XAxis type="number" tickFormatter={compact} fontSize={11} />
-        <YAxis type="category" dataKey={nameKey} width={114} fontSize={11} tickLine={false} />
+        <XAxis type="number" tickFormatter={compact} fontSize={10} tickMargin={4} />
+        <YAxis type="category" dataKey={nameKey} width={90} fontSize={10} tickLine={false} />
         <Tooltip content={<Tip />} />
-        <Bar dataKey={dataKey} name={unit || "Value"} radius={[0, 6, 6, 0]} label={{ position: "right", fontSize: 10, fill: "#334155", formatter: v => compact(v) }}>
+        <Bar dataKey={dataKey} name={unit || "Value"} radius={[0, 4, 4, 0]} label={{ position: "right", fontSize: 9, fill: "#334155", formatter: v => compact(v) }}>
           {data.map((_, i) => (
             <Cell key={i} fill={multiColor ? COLORS[i % COLORS.length] : singleColor} />
           ))}
@@ -465,12 +465,12 @@ function ChartCard({ title, subtitle, data, kind = "bar", dataKey = "value", nam
         <BarRows data={data} dataKey={dataKey} nameKey={nameKey} multiColor />
       ) : (
         <ResponsiveContainer>
-          <BarChart data={data} margin={{ top: 14, right: 12, left: 0, bottom: 8 }}>
+          <BarChart data={data} margin={{ top: 10, right: 8, left: 0, bottom: 4 }}>
             <CartesianGrid strokeDasharray="2 4" vertical={false} stroke="#e2e8f0" />
-            <XAxis dataKey={nameKey} fontSize={10} interval={0} angle={-15} textAnchor="end" height={48} />
-            <YAxis tickFormatter={compact} fontSize={10} />
+            <XAxis dataKey={nameKey} fontSize={9} interval={0} angle={-15} textAnchor="end" height={36} />
+            <YAxis tickFormatter={compact} fontSize={9} width={40} />
             <Tooltip content={<Tip />} />
-            <Bar dataKey={dataKey} name="Arrivals" radius={[5, 5, 0, 0]} label={{ position: "top", fontSize: 10, formatter: compact }}>
+            <Bar dataKey={dataKey} name="Arrivals" radius={[4, 4, 0, 0]} label={{ position: "top", fontSize: 9, formatter: compact }}>
               {data.map((_, i) => (
                 <Cell key={i} fill={COLORS[i % COLORS.length]} />
               ))}
@@ -614,7 +614,7 @@ export default function App() {
             <button className="menu-btn" onClick={() => setMobileOpen(v => !v)} aria-label="Toggle menu">
               {mobileOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
-            <div className="brand-icon desktop-only"><Globe2 size={24} /></div>
+            <div className="brand-icon desktop-only"><Globe2 size={18} /></div>
             <div>
               <h1>Belize Tourism Analytics</h1>
               <p>Vibrant Tourism Intelligence & Statistical Dashboard</p>
@@ -625,7 +625,7 @@ export default function App() {
         <section className="global-filter">
           <div className="filter-title">
             <div className="filter-title-left">
-              <Filter size={17} />
+              <Filter size={14} />
               <b>Global filters</b>
               <span>Applies to overview, KPIs and data table</span>
             </div>
@@ -660,10 +660,13 @@ export default function App() {
             <Kpi themeIndex={5} label="Estimated tourism revenue" value={`$${compact(sum(current, r => r.revenue))}`} change={growth} icon={Wallet} />
           </div>
 
-          <div className="grid three">
+          <div className="grid two">
             <ChartCard accentColor="#2563eb" title="Visitor arrivals by type" subtitle="Overnight tourists and excursionists" data={typeData} kind="donut" />
             <ChartCard accentColor="#10b981" title="Arrivals by destination country" subtitle="Top destination markets" data={destinationData.slice(0, 8)} kind="horizontal" />
-            <Panel accentColor="#f59e0b" title="Year-over-year variation by destination" subtitle="Annual arrivals growth (%)">
+          </div>
+
+          <div className="grid one">
+            <Panel accentColor="#f59e0b" title="Year-over-year variation by destination" subtitle="Annual arrivals growth (%)" wide>
               {(() => {
                 const d = DESTINATIONS.map(name => {
                   const now = sum(current.filter(r => r.destination === name), r => r.arrivals);
@@ -683,7 +686,7 @@ export default function App() {
                   <XAxis dataKey="year" />
                   <YAxis tickFormatter={compact} />
                   <Tooltip content={<Tip />} />
-                  <Legend />
+                  <Legend iconSize={8} wrapperStyle={{ fontSize: 11 }} />
                   <Bar stackId="a" dataKey="Overnight" name="Overnight tourists" fill="#2563eb" radius={[0, 0, 0, 0]} />
                   <Bar stackId="a" dataKey="Excursionists" name="Excursionists" fill="#06b6d4" radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -731,7 +734,7 @@ export default function App() {
                       <XAxis dataKey="month" />
                       <YAxis tickFormatter={compact} />
                       <Tooltip content={<Tip />} />
-                      <Legend />
+                      <Legend iconSize={8} wrapperStyle={{ fontSize: 11 }} />
                       <Area dataKey="overnight" name="Overnight tourists" fill="url(#overnightGrad)" stroke="#2563eb" strokeWidth={2.5} />
                       <Bar dataKey="cruise" name="Cruise visitors" fill="#f59e0b" radius={[4, 4, 0, 0]} />
                       <Line dataKey="previous" name="Previous year" stroke="#ec4899" strokeWidth={2.5} strokeDasharray="5 4" dot={{ r: 3 }} />
@@ -894,7 +897,7 @@ export default function App() {
                       <XAxis dataKey="year" />
                       <YAxis tickFormatter={compact} />
                       <Tooltip content={<Tip />} />
-                      <Legend />
+                      <Legend iconSize={8} wrapperStyle={{ fontSize: 11 }} />
                       <Bar dataKey="Overnight" stackId="x" fill="#2563eb" />
                       <Bar dataKey="Excursionists" stackId="x" fill="#ec4899" radius={[4, 4, 0, 0]} />
                     </BarChart>
@@ -964,7 +967,7 @@ export default function App() {
                       <XAxis dataKey="destination" fontSize={10} />
                       <YAxis domain={[0, 100]} unit="%" />
                       <Tooltip content={<Tip />} />
-                      <Legend />
+                      <Legend iconSize={8} wrapperStyle={{ fontSize: 11 }} />
                       <Bar dataKey={REASONS[0]} stackId="a" fill="#10b981" />
                       <Bar dataKey={REASONS[1]} stackId="a" fill="#2563eb" />
                       <Bar dataKey={REASONS[2]} stackId="a" fill="#8b5cf6" />
@@ -1011,7 +1014,7 @@ export default function App() {
                       <XAxis dataKey="destination" fontSize={10} />
                       <YAxis domain={[0, 100]} unit="%" />
                       <Tooltip content={<Tip />} />
-                      <Legend />
+                      <Legend iconSize={8} wrapperStyle={{ fontSize: 11 }} />
                       <Bar dataKey="Air" stackId="a" fill="#2563eb" />
                       <Bar dataKey="Maritime" stackId="a" fill="#ec4899" />
                       <Bar dataKey="Land" stackId="a" fill="#f59e0b" />
