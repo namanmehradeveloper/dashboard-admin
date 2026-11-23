@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ResponsiveContainer, BarChart, Bar, LineChart, Line, AreaChart, Area,
   PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -6,8 +6,217 @@ import {
 } from "recharts";
 import {
   Ship, Users, TrendingUp, CalendarDays, Filter, RotateCcw,
-  Download, Database, Globe2, BedDouble, Wallet, ChevronDown
+  Download, Globe2, BedDouble, Wallet, ChevronDown, ChevronUp,
+  LayoutDashboard, Plane, HeartHandshake, DoorOpen, MapPinned,
+  Table2, Menu, X, PanelLeftClose, PanelLeftOpen, Search, ArrowUpDown
 } from "lucide-react";
+
+const SIDEBAR_MIN = 72;
+const SIDEBAR_MAX = 300;
+const SIDEBAR_DEFAULT = 240;
+const SIDEBAR_COLLAPSED = 72;
+const SIDEBAR_STORAGE_KEY = "belize-tourism-sidebar";
+const MOBILE_BREAKPOINT = 980;
+
+const NAV_ITEMS = [
+  ["overview", "Overview", LayoutDashboard],
+  ["arrivals", "International arrivals", Plane],
+  ["motives", "Travel reasons", HeartHandshake],
+  ["entry", "Entry methods", DoorOpen],
+  ["markets", "Origin markets", MapPinned],
+  ["spending", "Stay & spending", Wallet],
+  ["cruises", "Cruise tourism", Ship],
+  ["records", "Data records", Table2]
+];
+
+function readSidebarPrefs() {
+  try {
+    const raw = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+    if (!raw) return { width: SIDEBAR_DEFAULT, collapsed: false };
+    const parsed = JSON.parse(raw);
+    const width = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, Number(parsed.width) || SIDEBAR_DEFAULT));
+    return { width, collapsed: Boolean(parsed.collapsed) };
+  } catch {
+    return { width: SIDEBAR_DEFAULT, collapsed: false };
+  }
+}
+
+function saveSidebarPrefs(width, collapsed) {
+  try {
+    localStorage.setItem(
+      SIDEBAR_STORAGE_KEY,
+      JSON.stringify({ width, collapsed })
+    );
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+const AppSidebar = React.memo(function AppSidebar({ tab, onNavigate, mobileOpen, setMobileOpen }) {
+  const prefs = useRef(null);
+  if (!prefs.current) prefs.current = readSidebarPrefs();
+
+  const sidebarRef = useRef(null);
+  const widthRef = useRef(prefs.current.width);
+  const collapsedRef = useRef(prefs.current.collapsed);
+  const resizeRef = useRef({ active: false, startX: 0, startWidth: SIDEBAR_DEFAULT, liveWidth: SIDEBAR_DEFAULT });
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== "undefined" && window.innerWidth <= MOBILE_BREAKPOINT
+  );
+
+  useEffect(() => {
+    const onResize = () => {
+      const mobile = window.innerWidth <= MOBILE_BREAKPOINT;
+      setIsMobile(mobile);
+      if (!mobile) setMobileOpen(false);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [setMobileOpen]);
+
+  const applyDom = useCallback((width, collapsed) => {
+    const el = sidebarRef.current;
+    if (!el) return;
+    el.style.width = `${width}px`;
+    el.classList.toggle("collapsed", collapsed && !(window.innerWidth <= MOBILE_BREAKPOINT));
+  }, []);
+
+  const toggleCollapsed = useCallback(() => {
+    if (window.innerWidth <= MOBILE_BREAKPOINT) return;
+    const next = !collapsedRef.current;
+    collapsedRef.current = next;
+    const width = next
+      ? SIDEBAR_COLLAPSED
+      : (widthRef.current < SIDEBAR_MIN + 8 ? SIDEBAR_DEFAULT : widthRef.current);
+    if (!next && widthRef.current < SIDEBAR_MIN + 8) widthRef.current = SIDEBAR_DEFAULT;
+    applyDom(width, next);
+    saveSidebarPrefs(widthRef.current, next);
+  }, [applyDom]);
+
+  const onResizeStart = useCallback((e) => {
+    if (window.innerWidth <= MOBILE_BREAKPOINT) return;
+    e.preventDefault();
+    const startX = e.clientX ?? e.touches?.[0]?.clientX;
+    const startWidth = collapsedRef.current ? SIDEBAR_COLLAPSED : widthRef.current;
+    resizeRef.current = { active: true, startX, startWidth, liveWidth: startWidth };
+
+    const el = sidebarRef.current;
+    if (el) {
+      el.classList.add("is-resizing");
+      el.classList.remove("collapsed");
+      el.style.width = `${startWidth}px`;
+    }
+    document.body.classList.add("sidebar-resizing");
+
+    const onMove = (ev) => {
+      if (!resizeRef.current.active) return;
+      if (ev.cancelable) ev.preventDefault();
+      const clientX = ev.clientX ?? ev.touches?.[0]?.clientX;
+      if (clientX == null) return;
+      const next = Math.min(
+        SIDEBAR_MAX,
+        Math.max(SIDEBAR_MIN, resizeRef.current.startWidth + (clientX - resizeRef.current.startX))
+      );
+      resizeRef.current.liveWidth = next;
+      applyDom(next, next <= SIDEBAR_COLLAPSED + 4);
+    };
+
+    const onUp = () => {
+      resizeRef.current.active = false;
+      const live = resizeRef.current.liveWidth;
+      const collapsed = live <= SIDEBAR_COLLAPSED + 4;
+      if (collapsed) {
+        collapsedRef.current = true;
+      } else {
+        collapsedRef.current = false;
+        widthRef.current = live;
+      }
+      saveSidebarPrefs(widthRef.current, collapsedRef.current);
+
+      sidebarRef.current?.classList.remove("is-resizing");
+      document.body.classList.remove("sidebar-resizing");
+      applyDom(collapsed ? SIDEBAR_COLLAPSED : widthRef.current, collapsed);
+
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onUp);
+    };
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    window.addEventListener("touchmove", onMove, { passive: false });
+    window.addEventListener("touchend", onUp);
+  }, [applyDom]);
+
+  const initialWidth = isMobile
+    ? SIDEBAR_DEFAULT
+    : (collapsedRef.current ? SIDEBAR_COLLAPSED : widthRef.current);
+
+  return (
+    <>
+      {mobileOpen && <div className="sidebar-backdrop" onClick={() => setMobileOpen(false)} />}
+      <aside
+        ref={sidebarRef}
+        className={[
+          "sidebar",
+          collapsedRef.current && !isMobile ? "collapsed" : "",
+          mobileOpen ? "open" : ""
+        ].filter(Boolean).join(" ")}
+        style={{ width: initialWidth }}
+        aria-label="Admin navigation"
+      >
+        <div className="sidebar-brand">
+          <div className="brand-icon"><Globe2 size={22} /></div>
+          <div className="sidebar-brand-text">
+            <strong>Belize Tourism</strong>
+            <span>Analytics</span>
+          </div>
+          <button
+            type="button"
+            className="sidebar-collapse-btn"
+            onClick={toggleCollapsed}
+            aria-label="Toggle sidebar"
+            title="Toggle sidebar"
+          >
+            <PanelLeftClose size={18} className="icon-collapse" />
+            <PanelLeftOpen size={18} className="icon-expand" />
+          </button>
+        </div>
+
+        <p className="sidebar-label">Navigation</p>
+        <nav className="sidebar-nav">
+          {NAV_ITEMS.map(([id, label, Icon]) => (
+            <button
+              key={id}
+              type="button"
+              className={tab === id ? "active" : ""}
+              onClick={() => { onNavigate(id); setMobileOpen(false); }}
+              data-tooltip={label}
+              aria-label={label}
+            >
+              <Icon size={18} />
+              <span className="nav-label">{label}</span>
+            </button>
+          ))}
+        </nav>
+
+        {!isMobile && (
+          <div
+            className="sidebar-resizer"
+            onMouseDown={onResizeStart}
+            onTouchStart={onResizeStart}
+            role="separator"
+            aria-orientation="vertical"
+            aria-valuemin={SIDEBAR_MIN}
+            aria-valuemax={SIDEBAR_MAX}
+            aria-label="Resize sidebar"
+          />
+        )}
+      </aside>
+    </>
+  );
+});
 
 const COLORS = [
   "#2563eb", "#10b981", "#f59e0b", "#ec4899", "#8b5cf6", "#06b6d4",
@@ -279,6 +488,7 @@ export default function App() {
   const [globalOrigin, setGlobalOrigin] = useState("All");
   const [globalType, setGlobalType] = useState("All");
   const [tab, setTab] = useState("overview");
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -390,57 +600,44 @@ export default function App() {
   };
 
   return (
-    <main className="app-shell">
+    <div className="app-shell">
+      <AppSidebar
+        tab={tab}
+        onNavigate={setTab}
+        mobileOpen={mobileOpen}
+        setMobileOpen={setMobileOpen}
+      />
 
-      <header className="topbar">
-        <div className="brand">
-          <div className="brand-icon"><Globe2 size={24} /></div>
-          <div>
-            <h1>Belize Tourism Analytics</h1>
-            <p>Vibrant Tourism Intelligence & Statistical Dashboard</p>
+      <main className="content">
+        <header className="topbar">
+          <div className="brand">
+            <button className="menu-btn" onClick={() => setMobileOpen(v => !v)} aria-label="Toggle menu">
+              {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+            <div className="brand-icon desktop-only"><Globe2 size={24} /></div>
+            <div>
+              <h1>Belize Tourism Analytics</h1>
+              <p>Vibrant Tourism Intelligence & Statistical Dashboard</p>
+            </div>
           </div>
-        </div>
-        <div className="top-actions">
-          <span className="mock-pill"><Database size={14} /> 10,000 MOCK RECORDS</span>
-          <button className="btn light" onClick={exportCsv}><Download size={15} /> Export data</button>
-        </div>
-      </header>
+        </header>
 
-      <div className="notice">
-        <b>DEMO DATA:</b> All figures are synthetic mock values (10,000 rows) for UI and functionality testing. They are not official Belize Tourism Board statistics.
-      </div>
+        <section className="global-filter">
+          <div className="filter-title">
+            <Filter size={17} />
+            <b>Global filters</b>
+            <span>Applies to overview, KPIs and data table</span>
+          </div>
+          <div className="global-fields">
+            <Select label="Year" value={globalYear} onChange={v => { setGlobalYear(v); setPage(1); }} options={[{ value: "All", label: "All years" }, ...years.map(y => ({ value: String(y), label: String(y) }))]} />
+            <Select label="Destination country" value={globalDestination} onChange={setGlobalDestination} options={[{ value: "All", label: "All destinations" }, ...DESTINATIONS.map(x => ({ value: x, label: x }))]} />
+            <Select label="Origin country" value={globalOrigin} onChange={setGlobalOrigin} options={[{ value: "All", label: "All origins" }, ...ORIGINS.map(x => ({ value: x, label: x }))]} />
+            <Select label="Visitor type" value={globalType} onChange={setGlobalType} options={[{ value: "All", label: "All types" }, { value: "Overnight", label: "Overnight tourists" }, { value: "Excursionist", label: "Excursionists" }]} />
+            <button className="btn reset" onClick={reset}><RotateCcw size={14} /> Reset all</button>
+          </div>
+        </section>
 
-      <section className="global-filter">
-        <div className="filter-title">
-          <Filter size={17} />
-          <b>Global filters</b>
-          <span>Applies to overview, KPIs and data table</span>
-        </div>
-        <div className="global-fields">
-          <Select label="Year" value={globalYear} onChange={v => { setGlobalYear(v); setPage(1); }} options={[{ value: "All", label: "All years" }, ...years.map(y => ({ value: String(y), label: String(y) }))]} />
-          <Select label="Destination country" value={globalDestination} onChange={setGlobalDestination} options={[{ value: "All", label: "All destinations" }, ...DESTINATIONS.map(x => ({ value: x, label: x }))]} />
-          <Select label="Origin country" value={globalOrigin} onChange={setGlobalOrigin} options={[{ value: "All", label: "All origins" }, ...ORIGINS.map(x => ({ value: x, label: x }))]} />
-          <Select label="Visitor type" value={globalType} onChange={setGlobalType} options={[{ value: "All", label: "All types" }, { value: "Overnight", label: "Overnight tourists" }, { value: "Excursionist", label: "Excursionists" }]} />
-          <button className="btn reset" onClick={reset}><RotateCcw size={14} /> Reset all</button>
-        </div>
-      </section>
-
-      <nav className="tabs">
-        {[
-          ["overview", "Overview"],
-          ["arrivals", "International arrivals"],
-          ["motives", "Travel reasons"],
-          ["entry", "Entry methods"],
-          ["markets", "Origin markets"],
-          ["spending", "Stay & spending"],
-          ["cruises", "Cruise tourism"],
-          ["records", "Data records"]
-        ].map(([id, label]) => (
-          <button key={id} className={tab === id ? "active" : ""} onClick={() => setTab(id)}>{label}</button>
-        ))}
-      </nav>
-
-      {tab === "overview" && (
+        {tab === "overview" && (
         <>
           <div className="section-heading">
             <div>
@@ -1008,85 +1205,122 @@ export default function App() {
           <div className="section-heading">
             <div>
               <h2>Tourism data records</h2>
-              <p>Search, sort and review the 10,000 generated mock records</p>
+              <p>Search, sort and review the generated mock records</p>
             </div>
             <span className="record-count">{fmt(filteredTable.length)} matching rows</span>
           </div>
           <section className="table-panel">
             <div className="table-toolbar">
-              <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search origin, destination, reason, date..." />
-              <button className="btn light" onClick={exportCsv}><Download size={14} /> Export filtered data</button>
-              <Select label="Rows per page" value={String(pageSize)} onChange={v => { setPageSize(+v); setPage(1); }} options={[10, 20, 50, 100].map(n => ({ value: String(n), label: String(n) }))} />
+              <div className="table-search">
+                <Search size={16} />
+                <input
+                  value={search}
+                  onChange={e => { setSearch(e.target.value); setPage(1); }}
+                  placeholder="Search origin, destination, reason, date..."
+                />
+              </div>
+              <div className="table-toolbar-actions">
+                <Select
+                  label="Rows per page"
+                  value={String(pageSize)}
+                  onChange={v => { setPageSize(+v); setPage(1); }}
+                  options={[10, 20, 50, 100].map(n => ({ value: String(n), label: String(n) }))}
+                />
+                <button type="button" className="btn export" onClick={exportCsv}>
+                  <Download size={15} /> Export CSV
+                </button>
+              </div>
             </div>
             <div className="table-scroll">
-              <table>
+              <table className="data-table">
                 <thead>
                   <tr>
                     {[
-                      ["date", "Date"],
-                      ["year", "Year"],
-                      ["origin", "Origin"],
-                      ["destination", "Destination"],
-                      ["type", "Visitor type"],
-                      ["reason", "Travel reason"],
-                      ["entry", "Entry"],
-                      ["arrivals", "Arrivals"],
-                      ["occupancy", "Occupancy %"],
-                      ["stay", "Stay days"],
-                      ["bookings", "Bookings"],
-                      ["spend", "Daily spend"],
-                      ["revenue", "Est. revenue"],
-                      ["cruiseCalls", "Cruise calls"]
-                    ].map(([k, l]) => (
-                      <th key={k} onClick={() => setSort(s => ({ key: k, dir: s.key === k && s.dir === "desc" ? "asc" : "desc" }))}>
-                        {l} {sort.key === k ? (sort.dir === "desc" ? "↓" : "↑") : "↕"}
-                      </th>
-                    ))}
+                      ["date", "Date", false],
+                      ["year", "Year", true],
+                      ["origin", "Origin", false],
+                      ["destination", "Destination", false],
+                      ["type", "Visitor type", false],
+                      ["reason", "Travel reason", false],
+                      ["entry", "Entry", false],
+                      ["arrivals", "Arrivals", true],
+                      ["occupancy", "Occupancy %", true],
+                      ["stay", "Stay days", true],
+                      ["bookings", "Bookings", true],
+                      ["spend", "Daily spend", true],
+                      ["revenue", "Est. revenue", true],
+                      ["cruiseCalls", "Cruise calls", true]
+                    ].map(([k, l, numeric]) => {
+                      const active = sort.key === k;
+                      return (
+                        <th
+                          key={k}
+                          className={[numeric ? "num" : "", active ? "sorted" : ""].filter(Boolean).join(" ")}
+                          onClick={() => setSort(s => ({ key: k, dir: s.key === k && s.dir === "desc" ? "asc" : "desc" }))}
+                        >
+                          <span className="th-inner">
+                            {l}
+                            {active ? (
+                              sort.dir === "desc" ? <ChevronDown size={14} /> : <ChevronUp size={14} />
+                            ) : (
+                              <ArrowUpDown size={13} className="th-sort-idle" />
+                            )}
+                          </span>
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody>
-                  {visible.map(r => (
+                  {visible.length === 0 ? (
+                    <tr className="empty-row">
+                      <td colSpan={14}>No records match your search or filters.</td>
+                    </tr>
+                  ) : visible.map(r => (
                     <tr key={r.id}>
-                      <td>{r.date}</td>
-                      <td>{r.year}</td>
-                      <td><b>{r.origin}</b></td>
+                      <td className="mono">{r.date}</td>
+                      <td className="num">{r.year}</td>
+                      <td className="strong">{r.origin}</td>
                       <td>{r.destination}</td>
                       <td>
                         <span className={`badge ${r.type === "Overnight" ? "overnight" : "excursion"}`}>
                           {r.type}
                         </span>
                       </td>
-                      <td>{r.reason}</td>
+                      <td className="reason-cell">{r.reason}</td>
                       <td>
                         <span className={`badge ${r.entry.toLowerCase()}`}>
                           {r.entry}
                         </span>
                       </td>
-                      <td><b>{fmt(r.arrivals)}</b></td>
-                      <td>{r.occupancy.toFixed(1)}%</td>
-                      <td>{r.stay.toFixed(1)}</td>
-                      <td>{fmt(r.bookings)}</td>
-                      <td>${r.spend.toFixed(1)}</td>
-                      <td><b>${compact(r.revenue)}</b></td>
-                      <td>{r.cruiseCalls}</td>
+                      <td className="num strong">{fmt(r.arrivals)}</td>
+                      <td className="num">{r.occupancy.toFixed(1)}%</td>
+                      <td className="num">{r.stay.toFixed(1)}</td>
+                      <td className="num">{fmt(r.bookings)}</td>
+                      <td className="num">${r.spend.toFixed(1)}</td>
+                      <td className="num strong revenue">${compact(r.revenue)}</td>
+                      <td className="num">{r.cruiseCalls}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
             <div className="pagination">
-              <span>Showing {filteredTable.length ? ((page - 1) * pageSize + 1) : 0}–{Math.min(page * pageSize, filteredTable.length)} of {fmt(filteredTable.length)}</span>
-              <div>
-                <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Previous</button>
-                <b>Page {page} / {totalPages}</b>
-                <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</button>
+              <span className="page-meta">
+                Showing <b>{filteredTable.length ? ((page - 1) * pageSize + 1) : 0}–{Math.min(page * pageSize, filteredTable.length)}</b> of <b>{fmt(filteredTable.length)}</b>
+              </span>
+              <div className="page-controls">
+                <button type="button" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>Previous</button>
+                <span className="page-pill">Page {page} / {totalPages}</span>
+                <button type="button" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>Next</button>
               </div>
             </div>
           </section>
         </>
       )}
 
-      <footer>Belize Tourism Analytics · Synthetic demo dataset · 10,000 records · Built with React and Recharts</footer>
-    </main>
+        <footer>Belize Tourism Analytics · Synthetic demo dataset · 10,000 records · Built with React and Recharts</footer>
+      </main>
+    </div>
   );
 }
