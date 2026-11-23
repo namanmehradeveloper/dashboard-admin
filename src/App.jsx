@@ -15,12 +15,12 @@ const COLORS = [
 ];
 
 const KPI_THEMES = [
-  { bg: "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)", border: "#3b82f6", iconBg: "#2563eb" },
-  { bg: "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)", border: "#10b981", iconBg: "#059669" },
-  { bg: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)", border: "#f59e0b", iconBg: "#d97706" },
-  { bg: "linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%)", border: "#ec4899", iconBg: "#db2777" },
-  { bg: "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)", border: "#8b5cf6", iconBg: "#7c3aed" },
-  { bg: "linear-gradient(135deg, #ecfeff 0%, #cffafe 100%)", border: "#06b6d4", iconBg: "#0891b2" }
+  { bg: "linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%)", border: "#2563eb", iconBg: "#2563eb" },
+  { bg: "linear-gradient(135deg, #d1fae5 0%, #6ee7b7 100%)", border: "#059669", iconBg: "#059669" },
+  { bg: "linear-gradient(135deg, #fef3c7 0%, #fcd34d 100%)", border: "#d97706", iconBg: "#d97706" },
+  { bg: "linear-gradient(135deg, #fce7f3 0%, #f9a8d4 100%)", border: "#db2777", iconBg: "#db2777" },
+  { bg: "linear-gradient(135deg, #ede9fe 0%, #c4b5fd 100%)", border: "#7c3aed", iconBg: "#7c3aed" },
+  { bg: "linear-gradient(135deg, #cffafe 0%, #67e8f9 100%)", border: "#0891b2", iconBg: "#0891b2" }
 ];
 
 const YEARS = Array.from({ length: 19 }, (_, i) => 2008 + i);
@@ -391,145 +391,6 @@ export default function App() {
 
   return (
     <main className="app-shell">
-      <style>{`
-        * { box-sizing: border-box; }
-        body { margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f1f5f9; color: #0f172a; }
-        .app-shell { max-width: 1440px; margin: 0 auto; padding: 20px; }
-        .topbar {
-          display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;
-          background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #0d9488 100%);
-          color: #fff; padding: 20px 24px; border-radius: 16px; box-shadow: 0 10px 25px rgba(37, 99, 235, 0.22);
-        }
-        .brand { display: flex; align-items: center; gap: 14px; }
-        .brand-icon { width: 46px; height: 46px; border-radius: 12px; background: rgba(255,255,255,0.2); display: grid; place-items: center; }
-        .brand h1 { margin: 0; font-size: 1.45rem; font-weight: 800; letter-spacing: -0.02em; }
-        .brand p { margin: 2px 0 0; font-size: 0.85rem; opacity: 0.9; }
-        .top-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-        .mock-pill {
-          display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 999px;
-          background: rgba(255,255,255,0.18); backdrop-filter: blur(6px); font-size: 0.78rem; font-weight: 700;
-        }
-        .btn {
-          display: inline-flex; align-items: center; gap: 6px; border: none; border-radius: 10px;
-          padding: 9px 15px; font-weight: 600; font-size: 0.84rem; cursor: pointer; transition: 0.2s;
-        }
-        .btn.light { background: #fff; color: #1e3a8a; }
-        .btn.light:hover { background: #eff6ff; transform: translateY(-1px); }
-        .btn.reset { background: linear-gradient(135deg, #f43f5e, #e11d48); color: #fff; align-self: flex-end; height: 38px; }
-        .btn.reset:hover { opacity: 0.92; }
-        .notice {
-          margin: 14px 0; padding: 11px 16px; border-radius: 10px; font-size: 0.83rem;
-          background: linear-gradient(90deg, #fef3c7, #ffedd5); border-left: 4px solid #f59e0b; color: #92400e;
-        }
-        .global-filter {
-          background: #fff; padding: 16px 20px; border-radius: 14px; box-shadow: 0 2px 10px rgba(15,23,42,0.05);
-          margin-bottom: 16px; border: 1px solid #e2e8f0;
-        }
-        .filter-title { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; color: #1e3a8a; }
-        .filter-title span { color: #64748b; font-size: 0.8rem; margin-left: 4px; }
-        .global-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
-        .field { display: flex; flex-direction: column; gap: 4px; font-size: 0.76rem; font-weight: 600; color: #475569; }
-        .select-wrap { position: relative; display: flex; align-items: center; }
-        .select-wrap select {
-          width: 100%; appearance: none; padding: 8px 30px 8px 11px; border-radius: 8px;
-          border: 1px solid #cbd5e1; background: #f8fafc; font-size: 0.84rem; color: #0f172a; font-weight: 500;
-        }
-        .select-wrap svg { position: absolute; right: 10px; pointer-events: none; color: #64748b; }
-        .tabs {
-          display: flex; gap: 8px; overflow-x: auto; padding: 6px; background: #fff;
-          border-radius: 14px; box-shadow: 0 2px 8px rgba(15,23,42,0.05); margin-bottom: 20px;
-        }
-        .tabs button {
-          border: none; background: transparent; padding: 9px 16px; border-radius: 10px;
-          font-weight: 600; font-size: 0.84rem; color: #475569; cursor: pointer; white-space: nowrap; transition: 0.2s;
-        }
-        .tabs button:hover { background: #f1f5f9; color: #2563eb; }
-        .tabs button.active {
-          background: linear-gradient(135deg, #2563eb, #06b6d4); color: #fff;
-          box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);
-        }
-        .section-heading {
-          display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;
-        }
-        .section-heading h2 { margin: 0; font-size: 1.25rem; color: #0f172a; }
-        .section-heading p { margin: 2px 0 0; font-size: 0.85rem; color: #64748b; }
-        .record-count {
-          background: #dbeafe; color: #1d4ed8; padding: 5px 12px; border-radius: 999px; font-size: 0.78rem; font-weight: 700;
-        }
-        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 18px; }
-        .kpi {
-          padding: 16px 18px; border-radius: 14px; box-shadow: 0 4px 12px rgba(15,23,42,0.05);
-          display: flex; flex-direction: column; gap: 6px;
-        }
-        .kpi-top { display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 600; color: #334155; }
-        .kpi-icon { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; }
-        .kpi strong { font-size: 1.65rem; font-weight: 800; color: #0f172a; }
-        .kpi small { font-size: 0.76rem; font-weight: 600; }
-        .kpi small.positive { color: #059669; }
-        .kpi small.negative { color: #e11d48; }
-        .kpi small.neutral { color: #64748b; }
-        .grid { display: grid; gap: 16px; margin-bottom: 16px; }
-        .grid.three { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
-        .grid.two { grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); }
-        .panel {
-          background: #fff; border-radius: 14px; padding: 16px 18px;
-          box-shadow: 0 4px 14px rgba(15,23,42,0.05); border: 1px solid #e2e8f0;
-        }
-        .panel.wide { grid-column: 1 / -1; }
-        .panel-head h3 { margin: 0; font-size: 1rem; color: #0f172a; }
-        .panel-head p { margin: 2px 0 10px; font-size: 0.8rem; color: #64748b; }
-        .local-filters {
-          display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;
-          background: #f8fafc; padding: 10px; border-radius: 10px; margin-bottom: 12px;
-        }
-        .chart-area { width: 100%; height: 290px; position: relative; }
-        .donut-wrap { width: 100%; height: 100%; position: relative; }
-        .donut-center {
-          position: absolute; top: 44%; left: 50%; transform: translate(-50%, -50%);
-          text-align: center; pointer-events: none;
-        }
-        .donut-center span { display: block; font-size: 0.72rem; color: #64748b; }
-        .donut-center b { font-size: 1.05rem; color: #0f172a; }
-        .tooltip {
-          background: rgba(15, 23, 42, 0.94); color: #fff; padding: 10px 12px; border-radius: 10px;
-          font-size: 0.8rem; box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-        }
-        .tooltip b { display: block; margin-bottom: 5px; color: #93c5fd; }
-        .tip-row { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
-        .tip-row i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
-        .table-panel { background: #fff; border-radius: 14px; padding: 16px; box-shadow: 0 4px 14px rgba(15,23,42,0.05); }
-        .table-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-bottom: 14px; }
-        .table-toolbar input {
-          flex: 1; min-width: 240px; padding: 9px 13px; border-radius: 9px; border: 1px solid #cbd5e1; font-size: 0.86rem;
-        }
-        .table-scroll { overflow-x: auto; border-radius: 10px; border: 1px solid #e2e8f0; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-        th {
-          background: linear-gradient(90deg, #1e3a8a, #2563eb); color: #fff; text-align: left;
-          padding: 11px 12px; cursor: pointer; white-space: nowrap;
-        }
-        td { padding: 9px 12px; border-bottom: 1px solid #f1f5f9; white-space: nowrap; }
-        tr:nth-child(even) td { background: #f8fafc; }
-        tr:hover td { background: #eff6ff; }
-        .badge { padding: 3px 9px; border-radius: 999px; font-size: 0.74rem; font-weight: 700; }
-        .badge.overnight { background: #dbeafe; color: #1d4ed8; }
-        .badge.excursion { background: #fce7f3; color: #be185d; }
-        .badge.air { background: #d1fae5; color: #047857; }
-        .badge.land { background: #fef3c7; color: #b45309; }
-        .badge.maritime { background: #ede9fe; color: #6d28d9; }
-        .pagination {
-          display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
-          margin-top: 14px; font-size: 0.83rem; color: #475569;
-        }
-        .pagination div { display: flex; align-items: center; gap: 10px; }
-        .pagination button {
-          padding: 6px 13px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; font-weight: 600;
-        }
-        .pagination button:disabled { opacity: 0.45; cursor: not-allowed; }
-        .footnote { font-size: 0.8rem; color: #64748b; margin-top: 8px; }
-        footer { text-align: center; padding: 20px 0 6px; font-size: 0.8rem; color: #64748b; }
-        @media (max-width: 600px) { .grid.two, .grid.three { grid-template-columns: 1fr; } }
-      `}</style>
 
       <header className="topbar">
         <div className="brand">
@@ -622,7 +483,7 @@ export default function App() {
                   <YAxis tickFormatter={compact} />
                   <Tooltip content={<Tip />} />
                   <Legend />
-                  <Bar stackId="a" dataKey="Overnight" name="Overnight tourists" fill="#6366f1" radius={[0, 0, 0, 0]} />
+                  <Bar stackId="a" dataKey="Overnight" name="Overnight tourists" fill="#2563eb" radius={[0, 0, 0, 0]} />
                   <Bar stackId="a" dataKey="Excursionists" name="Excursionists" fill="#06b6d4" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -763,7 +624,7 @@ export default function App() {
               })()}
             </Panel>
 
-            <Panel accentColor="#eab308" title="Average daily spend by origin" subtitle="Estimated USD per visitor per day" filters={filtersFor("overview-spend-origin")}>
+            <Panel accentColor="#f59e0b" title="Average daily spend by origin" subtitle="Estimated USD per visitor per day" filters={filtersFor("overview-spend-origin")}>
               {(() => {
                 const a = scoped("overview-spend-origin");
                 const d = ORIGINS.map(name => ({
@@ -833,7 +694,7 @@ export default function App() {
                       <YAxis tickFormatter={compact} />
                       <Tooltip content={<Tip />} />
                       <Legend />
-                      <Bar dataKey="Overnight" stackId="x" fill="#6366f1" />
+                      <Bar dataKey="Overnight" stackId="x" fill="#2563eb" />
                       <Bar dataKey="Excursionists" stackId="x" fill="#ec4899" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
