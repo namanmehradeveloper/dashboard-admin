@@ -180,15 +180,20 @@ body.sidebar-resizing .content {
 }
 
 .btn.reset {
-  background: linear-gradient(135deg, #f43f5e, #e11d48);
-  color: #fff;
-  align-self: flex-end;
-  height: 40px;
-  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.35);
+  background: #fff;
+  color: #be123c;
+  border: 1px solid #fda4af;
+  height: 36px;
+  padding: 0 14px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.08);
 }
 
 .btn.reset:hover {
-  opacity: 0.94;
+  background: #fff1f2;
+  border-color: #fb7185;
+  color: #9f1239;
   transform: translateY(-1px);
 }
 
@@ -217,9 +222,19 @@ body.sidebar-resizing .content {
 .filter-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 14px;
   color: #1d4ed8;
+  flex-wrap: wrap;
+}
+
+.filter-title-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 .filter-title span {
@@ -1054,13 +1069,6 @@ body.sidebar-resizing .content {
   border: 1px solid #e2e8f0;
   border-radius: var(--radius-sm);
   line-height: 1.55;
-}
-
-footer {
-  text-align: center;
-  padding: 24px 0 8px;
-  font-size: 0.8rem;
-  color: var(--muted);
 }
 
 @media (max-width: 980px) {

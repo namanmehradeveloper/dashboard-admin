@@ -483,7 +483,7 @@ function ChartCard({ title, subtitle, data, kind = "bar", dataKey = "value", nam
 }
 
 export default function App() {
-  const [globalYear, setGlobalYear] = useState("2026");
+  const [globalYear, setGlobalYear] = useState("All");
   const [globalDestination, setGlobalDestination] = useState("All");
   const [globalOrigin, setGlobalOrigin] = useState("All");
   const [globalType, setGlobalType] = useState("All");
@@ -590,7 +590,7 @@ export default function App() {
   };
 
   const reset = () => {
-    setGlobalYear("2026");
+    setGlobalYear("All");
     setGlobalDestination("All");
     setGlobalOrigin("All");
     setGlobalType("All");
@@ -624,16 +624,20 @@ export default function App() {
 
         <section className="global-filter">
           <div className="filter-title">
-            <Filter size={17} />
-            <b>Global filters</b>
-            <span>Applies to overview, KPIs and data table</span>
+            <div className="filter-title-left">
+              <Filter size={17} />
+              <b>Global filters</b>
+              <span>Applies to overview, KPIs and data table</span>
+            </div>
+            <button type="button" className="btn reset" onClick={reset}>
+              <RotateCcw size={14} /> Reset all
+            </button>
           </div>
           <div className="global-fields">
             <Select label="Year" value={globalYear} onChange={v => { setGlobalYear(v); setPage(1); }} options={[{ value: "All", label: "All years" }, ...years.map(y => ({ value: String(y), label: String(y) }))]} />
             <Select label="Destination country" value={globalDestination} onChange={setGlobalDestination} options={[{ value: "All", label: "All destinations" }, ...DESTINATIONS.map(x => ({ value: x, label: x }))]} />
             <Select label="Origin country" value={globalOrigin} onChange={setGlobalOrigin} options={[{ value: "All", label: "All origins" }, ...ORIGINS.map(x => ({ value: x, label: x }))]} />
             <Select label="Visitor type" value={globalType} onChange={setGlobalType} options={[{ value: "All", label: "All types" }, { value: "Overnight", label: "Overnight tourists" }, { value: "Excursionist", label: "Excursionists" }]} />
-            <button className="btn reset" onClick={reset}><RotateCcw size={14} /> Reset all</button>
           </div>
         </section>
 
@@ -1319,7 +1323,6 @@ export default function App() {
         </>
       )}
 
-        <footer>Belize Tourism Analytics · Synthetic demo dataset · 10,000 records · Built with React and Recharts</footer>
       </main>
     </div>
   );
