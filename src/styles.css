@@ -759,6 +759,10 @@ body.sidebar-resizing .content {
   grid-column: 1 / -1;
 }
 
+.panel.wide .chart-area {
+  height: calc(var(--chart-h) + 56px);
+}
+
 .panel-head h3 {
   margin: 0;
   font-size: var(--font-lg);

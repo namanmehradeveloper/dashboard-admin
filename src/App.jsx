@@ -436,15 +436,16 @@ function Donut({ data, centerLabel, centerValue }) {
   );
 }
 
-function BarRows({ data, dataKey = "value", nameKey = "name", unit = "", multiColor = true, singleColor = COLORS[0] }) {
+function BarRows({ data, dataKey = "value", nameKey = "name", unit = "", multiColor = true, singleColor = COLORS[0], formatValue = compact, xTickFormatter }) {
+  const tickFmt = xTickFormatter || formatValue;
   return (
     <ResponsiveContainer>
-      <BarChart data={data} layout="vertical" margin={{ top: 2, right: 28, bottom: 2, left: 4 }}>
+      <BarChart data={data} layout="vertical" margin={{ top: 2, right: 40, bottom: 2, left: 4 }}>
         <CartesianGrid strokeDasharray="2 4" horizontal={false} stroke="#e2e8f0" />
-        <XAxis type="number" tickFormatter={compact} fontSize={10} tickMargin={4} />
-        <YAxis type="category" dataKey={nameKey} width={90} fontSize={10} tickLine={false} />
+        <XAxis type="number" tickFormatter={tickFmt} fontSize={10} tickMargin={4} />
+        <YAxis type="category" dataKey={nameKey} width={108} fontSize={10} tickLine={false} />
         <Tooltip content={<Tip />} />
-        <Bar dataKey={dataKey} name={unit || "Value"} radius={[0, 4, 4, 0]} label={{ position: "right", fontSize: 9, fill: "#334155", formatter: v => compact(v) }}>
+        <Bar dataKey={dataKey} name={unit || "Value"} radius={[0, 4, 4, 0]} label={{ position: "right", fontSize: 9, fill: "#334155", formatter: formatValue }}>
           {data.map((_, i) => (
             <Cell key={i} fill={multiColor ? COLORS[i % COLORS.length] : singleColor} />
           ))}
@@ -1128,21 +1129,13 @@ export default function App() {
                 const d = DESTINATIONS.map(name => ({
                   name,
                   value: +avg(a.filter(r => r.destination === name), r => r.stay).toFixed(1)
-                }));
+                })).sort((a, b) => b.value - a.value);
                 return (
-                  <ResponsiveContainer>
-                    <BarChart data={d}>
-                      <CartesianGrid strokeDasharray="2 4" vertical={false} stroke="#e2e8f0" />
-                      <XAxis dataKey="name" fontSize={10} />
-                      <YAxis />
-                      <Tooltip content={<Tip />} />
-                      <Bar dataKey="value" name="Average stay (days)" radius={[6, 6, 0, 0]} label={{ position: "top" }}>
-                        {d.map((_, i) => (
-                          <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <BarRows
+                    data={d}
+                    unit="Average stay (days)"
+                    formatValue={v => Number(v).toFixed(1)}
+                  />
                 );
               })()}
             </Panel>
@@ -1153,21 +1146,14 @@ export default function App() {
                 const d = DESTINATIONS.map(name => ({
                   name,
                   value: +avg(a.filter(r => r.destination === name), r => r.spend).toFixed(1)
-                }));
+                })).sort((a, b) => b.value - a.value);
                 return (
-                  <ResponsiveContainer>
-                    <BarChart data={d}>
-                      <CartesianGrid strokeDasharray="2 4" vertical={false} stroke="#e2e8f0" />
-                      <XAxis dataKey="name" fontSize={10} />
-                      <YAxis tickFormatter={v => "$" + v} />
-                      <Tooltip content={<Tip />} />
-                      <Bar dataKey="value" name="Average daily spend (USD)" radius={[6, 6, 0, 0]} label={{ position: "top", formatter: v => "$" + v }}>
-                        {d.map((_, i) => (
-                          <Cell key={i} fill={COLORS[(i + 3) % COLORS.length]} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <BarRows
+                    data={d}
+                    unit="Average daily spend (USD)"
+                    formatValue={v => `$${Number(v).toFixed(1)}`}
+                    xTickFormatter={v => `$${Math.round(v)}`}
+                  />
                 );
               })()}
             </Panel>
