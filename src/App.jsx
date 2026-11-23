@@ -8,15 +8,35 @@ import {
   Ship, Users, TrendingUp, CalendarDays, Filter, RotateCcw,
   Download, Globe2, BedDouble, Wallet, ChevronDown, ChevronUp,
   LayoutDashboard, Plane, HeartHandshake, DoorOpen, MapPinned,
-  Table2, Menu, X, PanelLeftClose, PanelLeftOpen, Search, ArrowUpDown
+  Table2, Menu, X, PanelLeftClose, PanelLeftOpen, Search, ArrowUpDown,
+  LogOut
 } from "lucide-react";
+import Login from "./Login.jsx";
 
 const SIDEBAR_MIN = 64;
 const SIDEBAR_MAX = 280;
 const SIDEBAR_DEFAULT = 200;
 const SIDEBAR_COLLAPSED = 64;
 const SIDEBAR_STORAGE_KEY = "belize-tourism-sidebar-v2";
+const AUTH_STORAGE_KEY = "belize-tourism-auth";
 const MOBILE_BREAKPOINT = 980;
+
+function readAuthFlag() {
+  try {
+    return localStorage.getItem(AUTH_STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function writeAuthFlag(authenticated) {
+  try {
+    if (authenticated) localStorage.setItem(AUTH_STORAGE_KEY, "1");
+    else localStorage.removeItem(AUTH_STORAGE_KEY);
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
 
 const NAV_ITEMS = [
   ["overview", "Overview", LayoutDashboard],
@@ -483,6 +503,7 @@ function ChartCard({ title, subtitle, data, kind = "bar", dataKey = "value", nam
 }
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(readAuthFlag);
   const [globalYear, setGlobalYear] = useState("All");
   const [globalDestination, setGlobalDestination] = useState("All");
   const [globalOrigin, setGlobalOrigin] = useState("All");
@@ -494,6 +515,16 @@ export default function App() {
   const [pageSize, setPageSize] = useState(20);
   const [local, setLocal] = useState({});
   const [sort, setSort] = useState({ key: "arrivals", dir: "desc" });
+
+  const handleLogin = useCallback(() => {
+    writeAuthFlag(true);
+    setIsAuthenticated(true);
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    writeAuthFlag(false);
+    setIsAuthenticated(false);
+  }, []);
 
   const years = YEARS;
   const globalRows = useMemo(
@@ -599,6 +630,10 @@ export default function App() {
     setLocal({});
   };
 
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
+
   return (
     <div className="app-shell">
       <AppSidebar
@@ -619,6 +654,12 @@ export default function App() {
               <h1>Belize Tourism Analytics</h1>
               <p>Vibrant Tourism Intelligence & Statistical Dashboard</p>
             </div>
+          </div>
+          <div className="top-actions">
+            <span className="mock-pill">Admin</span>
+            <button type="button" className="btn light" onClick={handleLogout} aria-label="Log out">
+              <LogOut size={15} /> Logout
+            </button>
           </div>
         </header>
 
