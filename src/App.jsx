@@ -9,7 +9,7 @@ import {
   Download, Globe2, BedDouble, Wallet, ChevronDown, ChevronUp,
   LayoutDashboard, Plane, HeartHandshake, DoorOpen, MapPinned,
   Table2, Menu, X, PanelLeftClose, PanelLeftOpen, Search, ArrowUpDown,
-  LogOut
+  LogOut, Check
 } from "lucide-react";
 import Login from "./Login.jsx";
 
@@ -347,18 +347,220 @@ function makeData(count = 10000) {
 const DATA = makeData(10000);
 
 function Select({ label, value, onChange, options }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+  const labelId = React.useId();
+  const selected = options.find(o => String(o.value) === String(value)) || options[0];
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e) => {
+      if (!wrapRef.current?.contains(e.target)) setOpen(false);
+    };
+    const onKey = (e) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+
   return (
-    <label className="field">
-      <span>{label}</span>
-      <div className="select-wrap">
-        <select value={value} onChange={e => onChange(e.target.value)}>
-          {options.map(o => (
-            <option key={String(o.value)} value={o.value}>{o.label}</option>
-          ))}
-        </select>
-        <ChevronDown size={14} />
+    <div className="field" ref={wrapRef}>
+      <span id={labelId}>{label}</span>
+      <div className={`select-wrap ${open ? "open" : ""}`}>
+        <button
+          type="button"
+          className="select-trigger"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-labelledby={labelId}
+          onClick={() => setOpen(v => !v)}
+        >
+          <span className="select-trigger-text">{selected?.label ?? ""}</span>
+          <ChevronDown size={14} className={`select-chevron ${open ? "up" : ""}`} />
+        </button>
+        {open && (
+          <ul className="select-menu" role="listbox" aria-labelledby={labelId}>
+            {options.map(o => {
+              const isActive = String(o.value) === String(value);
+              return (
+                <li key={String(o.value)} role="none">
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={isActive}
+                    className={`select-option ${isActive ? "active" : ""}`}
+                    onClick={() => {
+                      onChange(o.value);
+                      setOpen(false);
+                    }}
+                  >
+                    <span className="select-option-label">{o.label}</span>
+                    {isActive && <Check size={14} className="select-check" aria-hidden="true" />}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
-    </label>
+    </div>
+  );
+}
+
+const VISITOR_TYPES = [
+  { value: "Overnight", label: "Overnight tourists", short: "Overnight" },
+  { value: "Excursionist", label: "Excursionists", short: "Excursionists" }
+];
+
+// Every filter value is either "All" or a non-empty array of selected option values (strings).
+const matchSel = (selected, v) =>
+  selected === "All" || !Array.isArray(selected) || selected.length === 0 || selected.includes(String(v));
+
+const MAX_CHIPS = 2;
+
+function MultiSelect({ label, value, onChange, options, allLabel = "All", noun = "items" }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+  const labelId = React.useId();
+
+  const selected = Array.isArray(value) ? value : [];
+  const isAll = selected.length === 0;
+  const selectedOptions = options.filter(o => selected.includes(o.value));
+  const visibleChips = selectedOptions.slice(0, MAX_CHIPS);
+  const hiddenCount = selectedOptions.length - visibleChips.length;
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e) => {
+      if (!wrapRef.current?.contains(e.target)) setOpen(false);
+    };
+    const onKey = (e) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  // Selecting every individual option is equivalent to "All".
+  const commit = (next) => {
+    onChange(next.length === 0 || next.length === options.length ? "All" : next);
+  };
+
+  const toggle = (v) => {
+    commit(selected.includes(v) ? selected.filter(x => x !== v) : [...selected, v]);
+  };
+
+  const clearAll = () => onChange("All");
+
+  const onTriggerKey = (e) => {
+    if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") {
+      e.preventDefault();
+      setOpen(true);
+    }
+  };
+
+  return (
+    <div className="field" ref={wrapRef}>
+      <span id={labelId}>{label}</span>
+      <div className={`select-wrap ${open ? "open" : ""}`}>
+        <div
+          className="select-trigger ms-trigger"
+          role="combobox"
+          tabIndex={0}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-labelledby={labelId}
+          onClick={() => setOpen(v => !v)}
+          onKeyDown={onTriggerKey}
+        >
+          <span className="ms-trigger-content">
+            {isAll ? (
+              <span className="select-trigger-text">{allLabel}</span>
+            ) : (
+              <>
+                {visibleChips.map(o => (
+                  <span className="ms-chip" key={o.value}>
+                    <span className="ms-chip-label">{o.short || o.label}</span>
+                    <button
+                      type="button"
+                      className="ms-chip-remove"
+                      aria-label={`Remove ${o.label}`}
+                      onClick={(e) => { e.stopPropagation(); toggle(o.value); }}
+                    >
+                      <X size={10} />
+                    </button>
+                  </span>
+                ))}
+                {hiddenCount > 0 && <span className="ms-chip ms-chip-more">+{hiddenCount}</span>}
+              </>
+            )}
+          </span>
+          {!isAll && <span className="ms-count" title={`${selected.length} selected`}>{selected.length}</span>}
+          <ChevronDown size={14} className={`select-chevron ${open ? "up" : ""}`} />
+        </div>
+
+        {open && (
+          <ul className="select-menu" role="listbox" aria-multiselectable="true" aria-labelledby={labelId}>
+            <li role="none">
+              <button
+                type="button"
+                role="option"
+                aria-selected={isAll}
+                className={`select-option ms-option ${isAll ? "active" : ""}`}
+                onClick={clearAll}
+              >
+                <span className={`ms-box ${isAll ? "checked" : ""}`}>
+                  {isAll && <Check size={11} aria-hidden="true" />}
+                </span>
+                <span className="select-option-label">{allLabel}</span>
+              </button>
+            </li>
+            {options.map(o => {
+              const isActive = selected.includes(o.value);
+              return (
+                <li key={String(o.value)} role="none">
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={isActive}
+                    className={`select-option ms-option ${isActive ? "active" : ""}`}
+                    onClick={() => toggle(o.value)}
+                  >
+                    <span className={`ms-box ${isActive ? "checked" : ""}`}>
+                      {isActive && <Check size={11} aria-hidden="true" />}
+                    </span>
+                    <span className="select-option-label">{o.label}</span>
+                  </button>
+                </li>
+              );
+            })}
+            <li role="none" className="ms-footer">
+              <span className="ms-footer-count">
+                {isAll ? `All ${options.length} ${noun}` : `${selected.length} of ${options.length} selected`}
+              </span>
+              <button
+                type="button"
+                className="ms-clear"
+                onClick={clearAll}
+                disabled={isAll}
+              >
+                Clear selection
+              </button>
+            </li>
+          </ul>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -455,22 +657,24 @@ function BarRows({ data, dataKey = "value", nameKey = "name", unit = "", multiCo
   );
 }
 
+const YEAR_OPTIONS = YEARS.map(y => ({ value: String(y), label: String(y) }));
+const DESTINATION_OPTIONS = DESTINATIONS.map(x => ({ value: x, label: x }));
+const ORIGIN_OPTIONS = ORIGINS.map(x => ({ value: x, label: x }));
+
 function LocalFilters({ years, year, setYear, destination, setDestination, origin, setOrigin, type, setType, showType = true }) {
   return (
     <div className="local-filters">
-      <Select label="Year" value={year} onChange={setYear} options={[{ value: "All", label: "All years" }, ...years.map(y => ({ value: String(y), label: String(y) }))]} />
-      <Select label="Destination" value={destination} onChange={setDestination} options={[{ value: "All", label: "All destinations" }, ...DESTINATIONS.map(x => ({ value: x, label: x }))]} />
-      <Select label="Origin" value={origin} onChange={setOrigin} options={[{ value: "All", label: "All origins" }, ...ORIGINS.map(x => ({ value: x, label: x }))]} />
+      <MultiSelect label="Year" value={year} onChange={setYear} options={YEAR_OPTIONS} allLabel="All years" noun="years" />
+      <MultiSelect label="Destination" value={destination} onChange={setDestination} options={DESTINATION_OPTIONS} allLabel="All destinations" noun="destinations" />
+      <MultiSelect label="Origin" value={origin} onChange={setOrigin} options={ORIGIN_OPTIONS} allLabel="All origins" noun="origins" />
       {showType && (
-        <Select
+        <MultiSelect
           label="Visitor type"
           value={type}
           onChange={setType}
-          options={[
-            { value: "All", label: "All types" },
-            { value: "Overnight", label: "Overnight tourists" },
-            { value: "Excursionist", label: "Excursionists" }
-          ]}
+          options={VISITOR_TYPES}
+          allLabel="All types"
+          noun="types"
         />
       )}
     </div>
@@ -530,15 +734,22 @@ export default function App() {
   const years = YEARS;
   const globalRows = useMemo(
     () => DATA.filter(r =>
-      (globalYear === "All" || r.year === +globalYear) &&
-      (globalDestination === "All" || r.destination === globalDestination) &&
-      (globalOrigin === "All" || r.origin === globalOrigin) &&
-      (globalType === "All" || r.type === globalType)
+      matchSel(globalYear, r.year) &&
+      matchSel(globalDestination, r.destination) &&
+      matchSel(globalOrigin, r.origin) &&
+      matchSel(globalType, r.type)
     ),
     [globalYear, globalDestination, globalOrigin, globalType]
   );
 
-  const latest = globalYear === "All" ? 2026 : +globalYear;
+  // With several years selected, KPIs use the most recent selected year.
+  const selectedYears = Array.isArray(globalYear) ? globalYear.map(Number) : [];
+  const latest = selectedYears.length ? Math.max(...selectedYears) : 2026;
+  const yearLabel = selectedYears.length === 0
+    ? "all selected years"
+    : selectedYears.length <= 3
+      ? [...selectedYears].sort((a, b) => a - b).join(", ")
+      : `${selectedYears.length} selected years`;
   const current = globalRows.filter(r => r.year === latest);
   const previous = globalRows.filter(r => r.year === latest - 1);
   const arrivals = sum(current, r => r.arrivals);
@@ -552,10 +763,10 @@ export default function App() {
   const scoped = (id) => {
     const f = getLocal(id);
     return DATA.filter(r =>
-      (f.year === "All" || r.year === +f.year) &&
-      (f.destination === "All" || r.destination === f.destination) &&
-      (f.origin === "All" || r.origin === f.origin) &&
-      (f.type === "All" || r.type === f.type)
+      matchSel(f.year, r.year) &&
+      matchSel(f.destination, r.destination) &&
+      matchSel(f.origin, r.origin) &&
+      matchSel(f.type, r.type)
     );
   };
 
@@ -676,10 +887,10 @@ export default function App() {
             </button>
           </div>
           <div className="global-fields">
-            <Select label="Year" value={globalYear} onChange={v => { setGlobalYear(v); setPage(1); }} options={[{ value: "All", label: "All years" }, ...years.map(y => ({ value: String(y), label: String(y) }))]} />
-            <Select label="Destination country" value={globalDestination} onChange={setGlobalDestination} options={[{ value: "All", label: "All destinations" }, ...DESTINATIONS.map(x => ({ value: x, label: x }))]} />
-            <Select label="Origin country" value={globalOrigin} onChange={setGlobalOrigin} options={[{ value: "All", label: "All origins" }, ...ORIGINS.map(x => ({ value: x, label: x }))]} />
-            <Select label="Visitor type" value={globalType} onChange={setGlobalType} options={[{ value: "All", label: "All types" }, { value: "Overnight", label: "Overnight tourists" }, { value: "Excursionist", label: "Excursionists" }]} />
+            <MultiSelect label="Year" value={globalYear} onChange={v => { setGlobalYear(v); setPage(1); }} options={YEAR_OPTIONS} allLabel="All years" noun="years" />
+            <MultiSelect label="Destination country" value={globalDestination} onChange={v => { setGlobalDestination(v); setPage(1); }} options={DESTINATION_OPTIONS} allLabel="All destinations" noun="destinations" />
+            <MultiSelect label="Origin country" value={globalOrigin} onChange={v => { setGlobalOrigin(v); setPage(1); }} options={ORIGIN_OPTIONS} allLabel="All origins" noun="origins" />
+            <MultiSelect label="Visitor type" value={globalType} onChange={v => { setGlobalType(v); setPage(1); }} options={VISITOR_TYPES} allLabel="All types" noun="types" />
           </div>
         </section>
 
@@ -688,7 +899,7 @@ export default function App() {
           <div className="section-heading">
             <div>
               <h2>Tourism performance overview</h2>
-              <p>Key indicators and destination performance for {globalYear === "All" ? "all selected years" : globalYear}</p>
+              <p>Key indicators and destination performance for {yearLabel}</p>
             </div>
             <span className="record-count">{fmt(globalRows.length)} filtered records</span>
           </div>
